@@ -1,4 +1,4 @@
-; 2011 © André Lochotzke <andre.lochotzke@stud.fh-erfurt.de>
+; 2011-2012 © André Lochotzke <andre.lochotzke@stud.fh-erfurt.de>
 
 ; functions
 		extern		math_add

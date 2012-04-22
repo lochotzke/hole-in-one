@@ -6,11 +6,12 @@
     <programmer>gpsim</programmer>
     <files>
       <item>main.asm</item>
-      <item>/home/andre/Projects/FHE/MC/src/protractor/src/math.asm</item>
-      <item>/home/andre/Projects/FHE/MC/src/protractor/src/util.asm</item>
       <item>math.inc</item>
-      <item>/home/andre/Projects/FHE/MC/src/protractor/src/common.inc</item>
-      <item>/home/andre/Projects/FHE/MC/src/protractor/src/util.inc</item>
+      <item>common.inc</item>
+      <item>math.asm</item>
+      <item>macros.inc</item>
+      <item>sleep.inc</item>
+      <item>sleep.asm</item>
     </files>
     <description/>
     <version>0.1</version>

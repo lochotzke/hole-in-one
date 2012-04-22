@@ -1,4 +1,4 @@
-; 2011 © André Lochotzke <andre.lochotzke@stud.fh-erfurt.de>
+; 2011-2012 © André Lochotzke <andre.lochotzke@stud.fh-erfurt.de>
 
 ; necessary to use code with GPSim since the PIC16F84A is not supported
 ifdef		__16F84
@@ -9,12 +9,20 @@ ifdef		__16F84A
 		include		<p16f84a.inc>
 endif
 
+; http://www.retards.org/library/technology/electronics/pic/libraries/karl_lunt/picmacro.pdf
+; http://www.seanet.com/~karllunt/picmacro.zip
+		include		"macros.inc"
+
 ; use decimal as the default radix
 		radix		dec
 
 ; language extensions
-#define		_C		STATUS, C
-#define		_Z		STATUS, Z
+
+#define		IN		1
+#define		OUT		0
+
+#define		UP		1
+#define		DOWN		0
 
 ; saves all 14 bits of the PC
 addrof		macro		address, to
@@ -50,12 +58,29 @@ incw		macro
 		endm
 
 ; copy N bytes from one RAM address to another
-move		macro		from, to, size
+mov		macro		from, to, size
 		local		offset
 offset		set		0
 		while		offset < size
 		movf		from + offset, W
 		movwf		to + offset
+offset		set		offset + 1
+		endw
+		endm
+
+; MPASM™ Assembler, MPLINK™ Object Linker MPLIB™ Object Librarian User's Guide [2009], p. 153
+; init N bytes with literal
+movlf		macro		value, address, size
+		local		offset
+offset		set		0
+		movlw		address
+		movwf		FSR
+		while		offset < size
+		movlw		(value >> (8 * offset)) & H'FF'
+		if		offset > 0
+		incf		FSR, F
+		endif
+		movwf		INDF
 offset		set		offset + 1
 		endw
 		endm
@@ -70,17 +95,6 @@ setf		macro		address
 setw		macro
 		movlw		B'11111111'
 		endm
-
-; executes a command N times
-; unfortunately this does not work
-; exec		macro		command, n
-; 		local		i
-; i		set		0
-; 		while		i < n
-; 		command
-; i		set		i + 1
-; 		endw
-; 		endm
 
 ; stops the program
 halt		macro
@@ -101,11 +115,15 @@ i		set		i + 1
 		endm
 
 ; hardware and software setup
-#define		TRIGGER		PORTA, 4
-#define		TRIGGER_PIN	B'00010000'
+#define		TRIGGER_PORT	PORTA
+#define		TRIGGER_PIN	4
 
-#define		SENSOR		PORTB, 0
-#define		SENSOR_PIN	B'00000001'
+#define		SENSOR_PORT	PORTB
+#define		SENSOR_PIN	0
 
-#define		MAGNET		PORTB, 2
-#define		MAGNET_PIN	B'000000000'
+#define		MAGNET_PORT	PORTB
+#define		MAGNET_PIN	2
+
+#define		T_DROP		316121
+
+#define		MULTIPLIER	18
