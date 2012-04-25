@@ -153,3 +153,8 @@ hat.
 * http://www.piclist.com/
 * http://www.sprut.de/electronic/pic/
 * http://www.gedanken.demon.co.uk/amb-pic-code/
+### Math
+http://www.sprut.de/electronic/pic/math/math.htm
+http://www.piclist.com/techref/member/RF-AMY-K22a/mathsdefs_h.htm
+### Delay
+http://www.piclist.com/techref/microchip/delay/xus-mm.htm

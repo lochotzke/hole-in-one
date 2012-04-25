@@ -2,6 +2,9 @@
 
 ; http://www.piclist.com/techref/microchip/math/basic.htm
 ; http://www.sprut.de/electronic/pic/math/math.htm
+; http://www.microchip.com/stellent/idcplg?IdcService=SS_GET_PAGE&nodeId=1824&appnote=en010962
+; http://www.piclist.com/techref/microchip/math/frtomath32.asm
+; http://www.piclist.com/techref/microchip/math/32bmath-ph.htm
 
 include		"common.inc"
 
