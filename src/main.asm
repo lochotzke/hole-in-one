@@ -1,15 +1,37 @@
-; 2011-2012 © André Lochotzke <andre.lochotzke@stud.fh-erfurt.de>
+; TODO: Fehlerbetrachtung, statische Analyse (Zeitaufwand, Codezeilen...)
+; TODO: count T_CALC
+; TODO: determine T_RELEASE through trial and error
+; TODO: optimize t_countdown away by modifying TMR directly
 
-		title		"hole-in-one, v0.1"
+; 2012 © André Lochotzke <andre.lochotzke@stud.fh-erfurt.de>
 
-; external oscilator & watchdog timer off & power write on & code protection off
+; necessary to use code with GPSim since the PIC16F84A is not supported
+ifdef		__16F84
+		include		<p16f84.inc>
+endif
+
+ifdef		__16F84A
+		include		<p16f84a.inc>
+endif
+
+		; use decimal as the default radix
+		radix		dec
+
+		title		"hole-in-one, v0.2"
+
+		; external oscilator & watchdog timer off & power write on & code protection off
 		__config	_XT_OSC & _WDT_OFF & _PWRTE_ON & _CP_OFF
 
-include		"common.inc"
-include		"sleep.inc"
-include		"math.inc"
+#define		TRIGGER_PORT	PORTA
+#define		TRIGGER_PIN	4
+#define		SENSOR_PORT	PORTB
+#define		SENSOR_PIN	0
+#define		MAGNET_PORT	PORTB
+#define		MAGNET_PIN	2
 
-#define		F24_MAX		16777215	; h'ffffff'
+#define		T_CALC		0
+#define 	T_RELEASE	0
+#define		T_DROP		316121
 #define		TMR_Z		0
 
 		udata
@@ -18,8 +40,8 @@ include		"math.inc"
 FLAGS		res		1
 TMR1		res		1
 TMR2		res		1
-t_drop		res		4
-t_round		res		0
+t_countdown	res		4
+t_round		res		4
 t_slot		res		4
 		errorlevel	+231	; "No memory has been reserved by this instruction."
 
@@ -55,15 +77,18 @@ init
 		; MAGNET_PIN is already set as output
 		bcf		STATUS, RP0
 		errorlevel	+302
-		movlf		T_DROP, t_drop, 4	; TODO: add T_RELEASE to T_DROP
+		; init countdown
+		movlw		(T_CALC + T_RELEASE + T_DROP) & H'ff'
+		movwf		t_countdown
+		movlw		(T_CALC + T_RELEASE + T_DROP) >> 8 & H'ff'
+		movwf		t_countdown + 1
+		movlw		(T_CALC + T_RELEASE + T_DROP) >> 16 & H'ff'
+		movwf		t_countdown + 2
 		; enable interrupts
 		bsf		INTCON, GIE
 		goto		main
 
 main
-; TODO: Fehlerbetrachtung, statische Analyse (Zeitaufwand, Codezeilen...)
-; TODO: wait until ball is actually able to fall through/disk spins slowly enough -> Schlitzlänge messen
-
 		; poll trigger push
 		btfss		TRIGGER_PORT, TRIGGER_PIN
 main_loop_trigger
@@ -73,27 +98,28 @@ main_loop_trigger
 
 		; poll slot start
 main_loop_slot_start
-		btfss		SENSOR_PORT, SENSOR_PIN
+		btfss		SENSOR_PORT, SENSOR_PIN		; 2µs
 		goto		main_loop_slot_start
 
-		; start timer
-		; reset TMR0
-		clrf		TMR0
-		; enable TMR0 interrupt
-		bsf		INTCON, T0IE
+		; count t_slot
+		; init TMR to account for delay
+		movlw		3				; 1µs
+		movwf		TMR0				; 1µs + 2µs (timer delay)
+		; enable TMR interrupt
+		bsf		INTCON, T0IE			; (1µs)
 
 		; poll slot end
 main_loop_slot_end
-		btfsc		SENSOR_PORT, SENSOR_PIN
+		btfsc		SENSOR_PORT, SENSOR_PIN		; 2µs
 		goto		main_loop_slot_end
 
 		; stop timer
 		; change TMR0 source to RA4 to stop counter
-		bsf		OPTION_REG, T0CS
-		; disable interrupts
-		bcf		INTCON, GIE
+		bsf		OPTION_REG, T0CS		; 1µs
+		; disable TMR interrupt
+		bcf		INTCON, T0IE
 
-		; save TMR0:2
+		; save TMR0:2 to t_slot
 		movf		TMR0, W
 		movwf		t_slot
 		movf		TMR1, W
@@ -101,9 +127,87 @@ main_loop_slot_end
 		movf		TMR2, W
 		movwf		t_slot + 2
 
-		; TODO: math
+		; multiply TMR with 18 (TMR = (TMR * 2 * 2 * 2 + TMR) * 2)
+		; TMR *= 2
+		rlf		TMR0, F
+		rlf		TMR1, F
+		rlf		TMR2, F
+		bcf		STATUS, C
+		; TMR *= 2
+		rlf		TMR0, F
+		rlf		TMR1, F
+		rlf		TMR2, F
+		bcf		STATUS, C
+		; TMR *= 2
+		rlf		TMR0, F
+		rlf		TMR1, F
+		rlf		TMR2, F
+		bcf		STATUS, C
+		; TMR += t_slot
+		movf		t_slot, W
+		addwf		TMR0, F
+		btfsc		STATUS, C
+		incf		TMR1, F
+		movf		t_slot + 1, W
+		addwf		TMR1, F
+		btfsc		STATUS, C
+		incf		TMR2, F
+		movf		t_slot + 2, W
+		addwf		TMR2, F
+		; TMR *= 2
+		rlf		TMR0, F
+		rlf		TMR1, F
+		rlf		TMR2, F
+		bcf		STATUS, C
 
-		; wait for TMR0:2 to reach F24_MAX
+		; save TMR0:2 to t_round
+		movf		TMR0, W
+		movwf		t_round
+		movf		TMR1, W
+		movwf		t_round + 1
+		movf		TMR2, W
+		movwf		t_round + 2
+
+		; add t_slot to t_countdown
+		movf		t_slot, W
+		addwf		t_countdown, F
+		movf		t_slot + 1, W
+		btfsc		STATUS, C
+		incf		t_slot + 1, W
+		addwf		t_countdown + 1, F
+		movf		t_slot + 2, W
+		btfsc		STATUS, C
+		incf		t_slot + 2, W
+		addwf		t_countdown + 2, F
+
+main_loop_calc
+		; adjust t_countdown to cause drop in current or next round
+		movf		t_round, W
+		subwf		t_countdown, F
+		movf		t_round + 1, W
+		btfss		STATUS, C
+		incfsz		t_round + 1, W
+		subwf		t_countdown + 1, F
+		movf		t_round + 2, W
+		btfss		STATUS, C
+		incfsz		t_round + 2, W
+		subwf		t_countdown + 2, F
+		btfss		STATUS, C
+		goto		main_loop_calc
+
+		; init and start timer/countdown
+		movf		t_countdown, W
+		movwf		TMR0
+		movf		t_countdown + 1, W
+		movwf		TMR1
+		movf		t_countdown + 2, W
+		movwf		TMR2
+		; change TMR0 source back to internal cycle count
+		bcf		OPTION_REG, T0CS
+		; enable TMR interrupt
+		bsf		INTCON, T0IE
+
+		; wait for TMR0:2 to overflow
 main_loop_countdown
 		btfss		FLAGS, TMR_Z
 		goto		main_loop_countdown
@@ -113,21 +217,5 @@ main_loop_countdown
 
 		; halt
 		goto		$
-
-		; count until sensor pin is down
-;main_loop_slot
-;		movlw		13	; TODO: add addwf32 time
-;		addwf32		t_slot, F
-;		btfsc		SENSOR_PORT, SENSOR_PIN
-;		goto		main_loop_slot
-;		; pass is always possible
-;		mullf32		t_slot, MULTIPLIER
-;; release = round - drop time (32bit math)
-;; if release
-;;  < 0 -> release += round and repeat
-;;  > 0 || == 0 release in release µs
-;		call		sleep_us ; delay release
-;; release
-;		goto		main
 
 		end
