@@ -32,8 +32,8 @@
 FLAGS		res		1
 TMR1		res		1
 TMR2		res		1
-t_round		res		4
-t_slot		res		4
+t_round		res		3
+t_slot		res		3
 		errorlevel	+231	; "No memory has been reserved by this instruction."
 
 start		code		0
