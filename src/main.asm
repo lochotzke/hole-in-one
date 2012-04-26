@@ -63,7 +63,7 @@ init
 		bcf		OPTION_REG, PS0
 		; set TRIGGER_PIN as input
 		bsf		TRISA, TRIGGER_PIN
-		; set TRIGGER_PIN as input
+		; set SENSOR_PIN as input
 		bsf		TRISB, SENSOR_PIN
 		; MAGNET_PIN is already set as output
 		bcf		STATUS, RP0
@@ -116,17 +116,14 @@ main_loop_slot_end
 		rlf		TMR0, F
 		rlf		TMR1, F
 		rlf		TMR2, F
-		bcf		STATUS, C
 		; TMR *= 2
 		rlf		TMR0, F
 		rlf		TMR1, F
 		rlf		TMR2, F
-		bcf		STATUS, C
 		; TMR *= 2
 		rlf		TMR0, F
 		rlf		TMR1, F
 		rlf		TMR2, F
-		bcf		STATUS, C
 		; TMR += t_slot
 		movf		t_slot, W
 		addwf		TMR0, F
@@ -142,7 +139,6 @@ main_loop_slot_end
 		rlf		TMR0, F
 		rlf		TMR1, F
 		rlf		TMR2, F
-		bcf		STATUS, C
 
 		; save TMR0:2 to t_round
 		movf		TMR0, W
