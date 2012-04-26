@@ -9,7 +9,7 @@
 		; use decimal as the default radix
 		radix		dec
 
-		title		"hole-in-one, v0.2"
+		title		"hole-in-one, v0.3"
 
 		; external oscilator & watchdog timer off & power write on & code protection off
 		__config	_XT_OSC & _WDT_OFF & _PWRTE_ON & _CP_OFF
@@ -48,8 +48,8 @@ isr
 		incf		TMR2, F
 		btfsc		STATUS, Z
 		bsf		FLAGS, TMR_Z
-		; clear TMR0 interrupt flag
-		bsf		INTCON, T0IF
+		; clear TMR interrupt flag
+		bcf		INTCON, T0IF
 		retfie
 
 init
