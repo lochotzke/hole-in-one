@@ -77,13 +77,6 @@ init
 		; MAGNET_PIN is already set as output
 		bcf		STATUS, RP0
 		errorlevel	+302
-		; init countdown
-		movlw		(T_CALC + T_RELEASE + T_DROP) & H'ff'
-		movwf		t_countdown
-		movlw		(T_CALC + T_RELEASE + T_DROP) >> 8 & H'ff'
-		movwf		t_countdown + 1
-		movlw		(T_CALC + T_RELEASE + T_DROP) >> 16 & H'ff'
-		movwf		t_countdown + 2
 		; enable interrupts
 		bsf		INTCON, GIE
 		goto		main
@@ -168,40 +161,42 @@ main_loop_slot_end
 		movf		TMR2, W
 		movwf		t_round + 2
 
-		; add t_slot to t_countdown
+		; init countdown
+		movlw		(T_CALC + T_RELEASE + T_DROP) & H'ff'
+		movwf		TMR0
+		movlw		(T_CALC + T_RELEASE + T_DROP) >> 8 & H'ff'
+		movwf		TMR1
+		movlw		(T_CALC + T_RELEASE + T_DROP) >> 16 & H'ff'
+		movwf		TMR2
+
+		; add t_slot to countdown
 		movf		t_slot, W
-		addwf		t_countdown, F
+		addwf		TMR0, F
 		movf		t_slot + 1, W
 		btfsc		STATUS, C
 		incf		t_slot + 1, W
-		addwf		t_countdown + 1, F
+		addwf		TMR1, F
 		movf		t_slot + 2, W
 		btfsc		STATUS, C
 		incf		t_slot + 2, W
-		addwf		t_countdown + 2, F
+		addwf		TMR2, F
 
 main_loop_calc
-		; adjust t_countdown to cause drop in current or next round
+		; adjust countdown to cause drop in current or next round
 		movf		t_round, W
-		subwf		t_countdown, F
+		subwf		TMR0, F
 		movf		t_round + 1, W
 		btfss		STATUS, C
 		incfsz		t_round + 1, W
-		subwf		t_countdown + 1, F
+		subwf		TMR1, F
 		movf		t_round + 2, W
 		btfss		STATUS, C
 		incfsz		t_round + 2, W
-		subwf		t_countdown + 2, F
+		subwf		TMR2, F
 		btfss		STATUS, C
 		goto		main_loop_calc
 
-		; init and start timer/countdown
-		movf		t_countdown, W
-		movwf		TMR0
-		movf		t_countdown + 1, W
-		movwf		TMR1
-		movf		t_countdown + 2, W
-		movwf		TMR2
+		; start timer/countdown
 		; change TMR0 source back to internal cycle count
 		bcf		OPTION_REG, T0CS
 		; enable TMR interrupt
