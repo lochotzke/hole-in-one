@@ -138,6 +138,20 @@ wird. sublw N führt zu W = N - W.
 Bei Funktionsaufrufen (jumps) muss beachtet werden, dass der Stack nur 8 Ebenen
 hat.
 
+## Analysis
+
+cloc src/main.asm
+       1 text file.
+       2 unique file.                              
+       0 files ignored.
+
+http://cloc.sourceforge.net v 1.53  T=0.5 s (2.0 files/s, 416.0 lines/s)
+-------------------------------------------------------------------------------
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+Assembly                         1             29             40            139
+-------------------------------------------------------------------------------
+
 ## Links
 
 [ascii|ASCII-Tabelle]:http://www.ascii-code.com/

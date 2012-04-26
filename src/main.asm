@@ -1,18 +1,10 @@
 ; TODO: Fehlerbetrachtung, statische Analyse (Zeitaufwand, Codezeilen...)
 ; TODO: count T_CALC
 ; TODO: determine T_RELEASE through trial and error
-; TODO: optimize t_countdown away by modifying TMR directly
 
 ; 2012 © André Lochotzke <andre.lochotzke@stud.fh-erfurt.de>
 
-; necessary to use code with GPSim since the PIC16F84A is not supported
-ifdef		__16F84
-		include		<p16f84.inc>
-endif
-
-ifdef		__16F84A
 		include		<p16f84a.inc>
-endif
 
 		; use decimal as the default radix
 		radix		dec
@@ -40,7 +32,6 @@ endif
 FLAGS		res		1
 TMR1		res		1
 TMR2		res		1
-t_countdown	res		4
 t_round		res		4
 t_slot		res		4
 		errorlevel	+231	; "No memory has been reserved by this instruction."
