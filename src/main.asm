@@ -1,4 +1,4 @@
-; TODO: Fehlerbetrachtung, statische Analyse (Zeitaufwand, Codezeilen...)
+; TODO: Fehlerbetrachtung, statische Analyse (Zeitaufwand, Codezeilen, Speicherverbrauch, ...)
 ; TODO: count T_CALC
 ; TODO: determine T_RELEASE through trial and error
 

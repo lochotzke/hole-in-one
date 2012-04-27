@@ -6,12 +6,6 @@
     <programmer>gpsim</programmer>
     <files>
       <item>main.asm</item>
-      <item>math.inc</item>
-      <item>common.inc</item>
-      <item>math.asm</item>
-      <item>macros.inc</item>
-      <item>sleep.inc</item>
-      <item>sleep.asm</item>
     </files>
     <description/>
     <version>0.1</version>
