@@ -1,5 +1,5 @@
 ; TODO: Fehlerbetrachtung, statische Analyse (Zeitaufwand, Codezeilen, Speicherverbrauch, ...)
-; TODO: count T_CALC
+; TODO: document calculations (round and countdown)
 ; TODO: determine T_RELEASE through trial and error
 
 ; 2012 © André Lochotzke <andre.lochotzke@stud.fh-erfurt.de>
@@ -21,7 +21,7 @@
 #define		MAGNET_PORT	PORTB
 #define		MAGNET_PIN	2
 
-#define		T_CALC		0
+#define		T_COMPUTE	79
 #define 	T_RELEASE	0
 #define		T_DROP		316121
 #define		TMR_Z		0
@@ -82,29 +82,29 @@ main_loop_trigger
 
 		; poll slot start
 main_loop_slot_start
-		btfss		SENSOR_PORT, SENSOR_PIN		; 2µs
+		btfss		SENSOR_PORT, SENSOR_PIN		; 2µs (start slot)
 		goto		main_loop_slot_start
 
 		; count t_slot
 		; init TMR to account for delay
 		movlw		3				; 1µs
-		movwf		TMR0				; 1µs + 2µs (timer delay)
+		movwf		TMR0				; 1µs + 2µs (timer delay) (start counter)
 		; enable TMR interrupt
 		bsf		INTCON, T0IE			; (1µs)
 
 		; poll slot end
 main_loop_slot_end
-		btfsc		SENSOR_PORT, SENSOR_PIN		; 2µs
+		btfsc		SENSOR_PORT, SENSOR_PIN		; 2µs (end slot)
 		goto		main_loop_slot_end
 
 		; stop timer
 		; change TMR0 source to RA4 to stop counter
-		bsf		OPTION_REG, T0CS		; 1µs
+		bsf		OPTION_REG, T0CS		; 1µs (end counter)
 		; disable TMR interrupt
-		bcf		INTCON, T0IE
+		bcf		INTCON, T0IE			; 1µs (start COMPUTE)
 
 		; save TMR0:2 to t_slot
-		movf		TMR0, W
+		movf		TMR0, W				; 6µs
 		movwf		t_slot
 		movf		TMR1, W
 		movwf		t_slot + 1
@@ -113,19 +113,19 @@ main_loop_slot_end
 
 		; multiply TMR with 18 (TMR = (TMR * 2 * 2 * 2 + TMR) * 2)
 		; TMR *= 2
-		rlf		TMR0, F
+		rlf		TMR0, F				; 3µs
 		rlf		TMR1, F
 		rlf		TMR2, F
 		; TMR *= 2
-		rlf		TMR0, F
+		rlf		TMR0, F				; 3µs
 		rlf		TMR1, F
 		rlf		TMR2, F
 		; TMR *= 2
-		rlf		TMR0, F
+		rlf		TMR0, F				; 3µs
 		rlf		TMR1, F
 		rlf		TMR2, F
 		; TMR += t_slot
-		movf		t_slot, W
+		movf		t_slot, W			; 10µs
 		addwf		TMR0, F
 		btfsc		STATUS, C
 		incf		TMR1, F
@@ -136,28 +136,28 @@ main_loop_slot_end
 		movf		t_slot + 2, W
 		addwf		TMR2, F
 		; TMR *= 2
-		rlf		TMR0, F
+		rlf		TMR0, F				; 3µs
 		rlf		TMR1, F
 		rlf		TMR2, F
 
 		; save TMR0:2 to t_round
-		movf		TMR0, W
+		movf		TMR0, W				; 6µs
 		movwf		t_round
 		movf		TMR1, W
 		movwf		t_round + 1
 		movf		TMR2, W
 		movwf		t_round + 2
 
-		; init countdown
-		movlw		(T_CALC + T_RELEASE + T_DROP) & H'ff'
+		; init countdown				; 6µs
+		movlw		(T_COMPUTE + T_RELEASE + T_DROP) >> 0 & H'ff'
 		movwf		TMR0
-		movlw		(T_CALC + T_RELEASE + T_DROP) >> 8 & H'ff'
+		movlw		(T_COMPUTE + T_RELEASE + T_DROP) >> 8 & H'ff'
 		movwf		TMR1
-		movlw		(T_CALC + T_RELEASE + T_DROP) >> 16 & H'ff'
+		movlw		(T_COMPUTE + T_RELEASE + T_DROP) >> 16 & H'ff'
 		movwf		TMR2
 
 		; add t_slot to countdown
-		movf		t_slot, W
+		movf		t_slot, W			; 10µs
 		addwf		TMR0, F
 		movf		t_slot + 1, W
 		btfsc		STATUS, C
@@ -170,7 +170,7 @@ main_loop_slot_end
 
 main_loop_calc
 		; adjust countdown to cause drop in current or next round
-		movf		t_round, W
+		movf		t_round, W			; min. 12µs max. 25µs
 		subwf		TMR0, F
 		movf		t_round + 1, W
 		btfss		STATUS, C
@@ -185,7 +185,7 @@ main_loop_calc
 
 		; start timer/countdown
 		; change TMR0 source back to internal cycle count
-		bcf		OPTION_REG, T0CS
+		bcf		OPTION_REG, T0CS		; 1µs + 2µs (delay)
 		; enable TMR interrupt
 		bsf		INTCON, T0IE
 
