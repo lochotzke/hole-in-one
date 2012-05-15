@@ -34,6 +34,7 @@ TMR1		res		1
 TMR2		res		1
 t_round		res		3
 t_slot		res		3
+n		res		1
 		errorlevel	+231	; "No memory has been reserved by this instruction."
 
 start		code		0
@@ -210,6 +211,42 @@ main_loop_calc
 		btfss		STATUS, C
 		goto		main_loop_calc
 
+;FIXME: count instructions
+main_loop_count
+		incf		n
+		; adjust countdown to cause drop in current or next round
+		movf		t_round, W			; min. 12µs max. 25µs
+		subwf		TMR0, F
+		movf		t_round + 1, W
+		btfss		STATUS, C
+		incfsz		t_round + 1, W
+		subwf		TMR1, F
+		movf		t_round + 2, W
+		btfss		STATUS, C
+		incfsz		t_round + 2, W
+		subwf		TMR2, F
+		btfss		STATUS, C
+		goto		main_loop_count
+
+main_loop_adjust
+		; adjust countdown to cause drop in current or next round
+		decf		n
+		btfsc		STATUS, Z
+		goto		main_loop_adjust_done
+		movf		t_round, W			; min. 12µs max. 25µs
+		subwf		TMR0, F
+		movf		t_round + 1, W
+		btfss		STATUS, C
+		incfsz		t_round + 1, W
+		subwf		TMR1, F
+		movf		t_round + 2, W
+		btfss		STATUS, C
+		incfsz		t_round + 2, W
+		subwf		TMR2, F
+		btfss		STATUS, C
+		goto		main_loop_adjust
+main_loop_adjust_done
+
 ; DEBUG
 		bsf		PORTB, 6
 		bcf		PORTB, 7
@@ -228,7 +265,7 @@ main_loop_countdown
 		; drop ball
 		bcf		MAGNET_PORT, MAGNET_PIN
 
-		; halt
-		goto		$
+		; re-run
+		goto		init
 
 		end
