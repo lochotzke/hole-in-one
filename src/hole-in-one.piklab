@@ -8,7 +8,7 @@
       <item>main.asm</item>
     </files>
     <description/>
-    <version>0.1</version>
+    <version>0.3</version>
     <output_type>executable</output_type>
   </general>
   <editors/>

@@ -15,7 +15,7 @@
 		__config	_XT_OSC & _WDT_OFF & _PWRTE_ON & _CP_OFF
 
 #define		TRIGGER_PORT	PORTA
-#define		TRIGGER_PIN	4
+#define		TRIGGER_PIN	1
 #define		SENSOR_PORT	PORTB
 #define		SENSOR_PIN	0
 #define		MAGNET_PORT	PORTB
@@ -63,22 +63,41 @@ init
 		bcf		OPTION_REG, PS0
 		; set TRIGGER_PIN as input
 		bsf		TRISA, TRIGGER_PIN
+; FIXME: make nicer
+		movlw		H'00'
+		movwf		TRISB
 		; set SENSOR_PIN as input
 		bsf		TRISB, SENSOR_PIN
-		; MAGNET_PIN is already set as output
 		bcf		STATUS, RP0
 		errorlevel	+302
+		; MAGNET_PIN is already set as output, but needs to be turned on
+		; set all to one
+		movlw		H'FF'
+		movwf		PORTB
 		; enable interrupts
 		bsf		INTCON, GIE
 		goto		main
 
 main
 		; poll trigger push
-		btfss		TRIGGER_PORT, TRIGGER_PIN
-main_loop_trigger
-		; poll trigger release
+; DEBUG
+		bcf		PORTB, 1
+
+main_loop_trigger_start
 		btfsc		TRIGGER_PORT, TRIGGER_PIN
-		goto		main_loop_trigger
+		goto		main_loop_trigger_start
+main_loop_trigger_stop
+; DEBUG
+		bsf		PORTB, 1
+		bcf		PORTB, 3
+		
+		; poll trigger release
+		btfss		TRIGGER_PORT, TRIGGER_PIN
+		goto		main_loop_trigger_stop
+
+; DEBUG
+		bsf		PORTB, 3
+		bcf		PORTB, 4
 
 		; poll slot start
 main_loop_slot_start
@@ -92,10 +111,18 @@ main_loop_slot_start
 		; enable TMR interrupt
 		bsf		INTCON, T0IE			; (1µs)
 
+; DEBUG
+		bsf		PORTB, 4
+		bcf		PORTB, 5
+
 		; poll slot end
 main_loop_slot_end
 		btfsc		SENSOR_PORT, SENSOR_PIN		; 2µs (end slot)
 		goto		main_loop_slot_end
+
+; DEBUG
+		bsf		PORTB, 5
+		bcf		PORTB, 6
 
 		; stop timer
 		; change TMR0 source to RA4 to stop counter
@@ -183,6 +210,10 @@ main_loop_calc
 		btfss		STATUS, C
 		goto		main_loop_calc
 
+; DEBUG
+		bsf		PORTB, 6
+		bcf		PORTB, 7
+
 		; start timer/countdown
 		; change TMR0 source back to internal cycle count
 		bcf		OPTION_REG, T0CS		; 1µs + 2µs (delay)
@@ -195,7 +226,7 @@ main_loop_countdown
 		goto		main_loop_countdown
 
 		; drop ball
-		bsf		MAGNET_PORT, MAGNET_PIN
+		bcf		MAGNET_PORT, MAGNET_PIN
 
 		; halt
 		goto		$
