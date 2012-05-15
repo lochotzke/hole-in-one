@@ -34,7 +34,7 @@ TMR1		res		1
 TMR2		res		1
 t_round		res		3
 t_slot		res		3
-n		res		1
+;n		res		1
 		errorlevel	+231	; "No memory has been reserved by this instruction."
 
 start		code		0
@@ -44,6 +44,7 @@ irq		code		4
 		goto		isr
 
 isr
+; http://www.pic-projects.net/index.php?option=com_content&view=article&id=53:multi-byte-increment&catid=38:arithmetic&Itemid=57
 		incf		TMR1, F
 		btfsc		STATUS, Z
 		incf		TMR2, F
@@ -153,15 +154,27 @@ main_loop_slot_end
 		rlf		TMR1, F
 		rlf		TMR2, F
 		; TMR += t_slot
+; movf    A0,W
+;         addwf   R0,F
+;         movf    A1,W
+;         btfsc   STATUS,C
+;         incfsz  A1,W
+;         addwf   R1,F
+;         movf    A2,W
+;         btfsc   STATUS,C
+;         incfsz  A2,W
+;         addwf   R2,F
+; TODO: another math fix?
+; http://www.pic-projects.net/index.php?option=com_content&view=article&id=57:multi-byte-addition-a-subtraction&catid=38:arithmetic&Itemid=57
 		movf		t_slot, W			; 10µs
 		addwf		TMR0, F
-		btfsc		STATUS, C
-		incf		TMR1, F
 		movf		t_slot + 1, W
-		addwf		TMR1, F
 		btfsc		STATUS, C
-		incf		TMR2, F
+		incfsz		t_slot + 1, W
+		addwf		TMR1, F
 		movf		t_slot + 2, W
+		btfsc		STATUS, C
+		incfsz		t_slot + 2, W
 		addwf		TMR2, F
 		; TMR *= 2
 		rlf		TMR0, F				; 3µs
@@ -184,18 +197,40 @@ main_loop_slot_end
 		movlw		(T_COMPUTE + T_RELEASE + T_DROP) >> 16 & H'ff'
 		movwf		TMR2
 
+; movf    A0,W
+;         addwf   R0,F
+;         movf    A1,W
+;         btfsc   STATUS,C
+;         incfsz  A1,W
+;         addwf   R1,F
+;         movf    A2,W
+;         btfsc   STATUS,C
+;         incfsz  A2,W
+;         addwf   R2,F
+
+; TODO: another math fix?
 		; add t_slot to countdown
 		movf		t_slot, W			; 10µs
 		addwf		TMR0, F
 		movf		t_slot + 1, W
 		btfsc		STATUS, C
-		incf		t_slot + 1, W
+		incfsz		t_slot + 1, W
 		addwf		TMR1, F
 		movf		t_slot + 2, W
 		btfsc		STATUS, C
-		incf		t_slot + 2, W
+		incfsz		t_slot + 2, W
 		addwf		TMR2, F
 
+;         movf    A0,W
+;         subwf   R0,F
+;         movf    A1,W
+;         btfss   STATUS,C
+;         incfsz  A1,W
+;         subwf   R1,F
+;         movf    A2,W
+;         btfss   STATUS,C
+;         incfsz  A2,W
+;         subwf   R2,F
 main_loop_calc
 		; adjust countdown to cause drop in current or next round
 		movf		t_round, W			; min. 12µs max. 25µs
@@ -208,44 +243,46 @@ main_loop_calc
 		btfss		STATUS, C
 		incfsz		t_round + 2, W
 		subwf		TMR2, F
-		btfss		STATUS, C
+; TODO: maybe btfsc is the fix?
+		btfsc		STATUS, C
 		goto		main_loop_calc
 
-;FIXME: count instructions
-main_loop_count
-		incf		n
-		; adjust countdown to cause drop in current or next round
-		movf		t_round, W			; min. 12µs max. 25µs
-		subwf		TMR0, F
-		movf		t_round + 1, W
-		btfss		STATUS, C
-		incfsz		t_round + 1, W
-		subwf		TMR1, F
-		movf		t_round + 2, W
-		btfss		STATUS, C
-		incfsz		t_round + 2, W
-		subwf		TMR2, F
-		btfss		STATUS, C
-		goto		main_loop_count
-
-main_loop_adjust
-		; adjust countdown to cause drop in current or next round
-		decf		n
-		btfsc		STATUS, Z
-		goto		main_loop_adjust_done
-		movf		t_round, W			; min. 12µs max. 25µs
-		subwf		TMR0, F
-		movf		t_round + 1, W
-		btfss		STATUS, C
-		incfsz		t_round + 1, W
-		subwf		TMR1, F
-		movf		t_round + 2, W
-		btfss		STATUS, C
-		incfsz		t_round + 2, W
-		subwf		TMR2, F
-		btfss		STATUS, C
-		goto		main_loop_adjust
-main_loop_adjust_done
+; 		clrf		n
+; ;FIXME: count instructions
+; main_loop_count
+; 		incf		n
+; 		; adjust countdown to cause drop in current or next round
+; 		movf		t_round, W			; min. 12µs max. 25µs
+; 		subwf		TMR0, F
+; 		movf		t_round + 1, W
+; 		btfss		STATUS, C
+; 		incfsz		t_round + 1, W
+; 		subwf		TMR1, F
+; 		movf		t_round + 2, W
+; 		btfss		STATUS, C
+; 		incfsz		t_round + 2, W
+; 		subwf		TMR2, F
+; 		btfss		STATUS, C
+; 		goto		main_loop_count
+; 
+; main_loop_adjust
+; 		; adjust countdown to cause drop in current or next round
+; 		decf		n
+; 		btfsc		STATUS, Z
+; 		goto		main_loop_adjust_done
+; 		movf		t_round, W			; min. 12µs max. 25µs
+; 		subwf		TMR0, F
+; 		movf		t_round + 1, W
+; 		btfss		STATUS, C
+; 		incfsz		t_round + 1, W
+; 		subwf		TMR1, F
+; 		movf		t_round + 2, W
+; 		btfss		STATUS, C
+; 		incfsz		t_round + 2, W
+; 		subwf		TMR2, F
+; 		btfss		STATUS, C
+; 		goto		main_loop_adjust
+; main_loop_adjust_done
 
 ; DEBUG
 		bsf		PORTB, 6
