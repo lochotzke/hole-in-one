@@ -1,8 +1,17 @@
 *~
+*.as
 *.cod
 *.cof
 *.hex
+*.hxl
 *.lst
 *.map
 *.o
+*.obj
+*.p1
+*.pre
+*.sdb
+*.sym
+*.rlf
+funclist
 picpcomm.log

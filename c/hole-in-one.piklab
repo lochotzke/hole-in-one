@@ -1,0 +1,15 @@
+<!DOCTYPE piklab>
+<piklab>
+  <general>
+    <device>16F84A</device>
+    <tool>picc</tool>
+    <programmer>custom</programmer>
+    <files>
+      <item>main.c</item>
+    </files>
+    <opened_files>
+      <item>main.c</item>
+    </opened_files>
+  </general>
+  <editors/>
+</piklab>

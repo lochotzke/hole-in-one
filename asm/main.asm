@@ -1,4 +1,3 @@
-; http://pic-projects.net/
 ; 2012 © André Lochotzke <andre.lochotzke@stud.fh-erfurt.de>
 
 		include		<p16f84a.inc>
