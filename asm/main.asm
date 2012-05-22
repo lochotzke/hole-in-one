@@ -18,14 +18,14 @@
 #define		MAGNET_PIN	2
 
 #define		T_DROP		316121
+#define		TMR_L		TMR0
 #define		TMR_Z		0
 
 		udata
  
 		errorlevel	-231	; "No memory has been reserved by this instruction."
 FLAGS		res		1
-TMR1		res		1
-TMR2		res		1
+TMR_H		res		2
 t_round		res		3
 t_slot		res		3
 		errorlevel	+231	; "No memory has been reserved by this instruction."
@@ -37,9 +37,9 @@ irq		code		4
 		goto		isr
 
 isr
-		incf		TMR1, F
+		incf		TMR_H, F
 		btfsc		STATUS, Z
-		incf		TMR2, F
+		incf		TMR_H + 1, F
 		btfsc		STATUS, Z
 		bsf		FLAGS, TMR_Z
 		; clear TMR interrupt flag
@@ -63,12 +63,12 @@ init
 		bcf		STATUS, RP0
 		errorlevel	+302
 		; turn off all leds and turn on magnet (all are low active)
-		movlw		h'ff'
+		movlw		b'11111110'
 		movwf		PORTB
 		; ram needs to be cleared since it can contain garbage
 		clrf		FLAGS
-		clrf		TMR1
-		clrf		TMR2
+		clrf		TMR_H
+		clrf		TMR_H + 1
 		clrf		t_round
 		clrf		t_round + 1
 		clrf		t_round + 2
@@ -105,7 +105,7 @@ main_loop_slot_start
 		goto		main_loop_slot_start
 
 		; count t_slot
-		clrf		TMR0
+		clrf		TMR_L
 		; enable TMR interrupt
 		bsf		INTCON, T0IE
 
@@ -127,82 +127,82 @@ main_loop_slot_end
 		bcf		INTCON, T0IE
 
 		; save TMR0:2 to t_slot
-		movf		TMR0, W
+		movf		TMR_L, W
 		movwf		t_slot
-		movf		TMR1, W
+		movf		TMR_H, W
 		movwf		t_slot + 1
-		movf		TMR2, W
+		movf		TMR_H + 1, W
 		movwf		t_slot + 2
 
 		; multiply TMR with 18 (TMR = (TMR * 2 * 2 * 2 + TMR) * 2)
 		; TMR *= 2
-		rlf		TMR0, F
-		rlf		TMR1, F
-		rlf		TMR2, F
+		rlf		TMR_L, F
+		rlf		TMR_H, F
+		rlf		TMR_H + 1, F
 		; TMR *= 2
-		rlf		TMR0, F
-		rlf		TMR1, F
-		rlf		TMR2, F
+		rlf		TMR_L, F
+		rlf		TMR_H, F
+		rlf		TMR_H + 1, F
 		; TMR *= 2
-		rlf		TMR0, F
-		rlf		TMR1, F
-		rlf		TMR2, F
+		rlf		TMR_L, F
+		rlf		TMR_H, F
+		rlf		TMR_H + 1, F
 		; TMR += t_slot
 		movf		t_slot, W
-		addwf		TMR0, F
+		addwf		TMR_L, F
 		movf		t_slot + 1, W
 		btfsc		STATUS, C
 		incfsz		t_slot + 1, W
-		addwf		TMR1, F
+		addwf		TMR_H, F
 		movf		t_slot + 2, W
 		btfsc		STATUS, C
 		incfsz		t_slot + 2, W
-		addwf		TMR2, F
+		addwf		TMR_H + 1, F
 		; TMR *= 2
-		rlf		TMR0, F
-		rlf		TMR1, F
-		rlf		TMR2, F
+		rlf		TMR_L, F
+		rlf		TMR_H, F
+		rlf		TMR_H + 1, F
 
 		; save TMR0:2 to t_round
-		movf		TMR0, W
+		movf		TMR_L, W
 		movwf		t_round
-		movf		TMR1, W
+		movf		TMR_H, W
 		movwf		t_round + 1
-		movf		TMR2, W
+		movf		TMR_H + 1, W
 		movwf		t_round + 2
 
 		; init countdown
 		movlw		T_DROP >> 0 & h'ff'
-		movwf		TMR0
+		movwf		TMR_L
 		movlw		T_DROP >> 8 & h'ff'
-		movwf		TMR1
+		movwf		TMR_H
 		movlw		T_DROP >> 16 & h'ff'
-		movwf		TMR2
+		movwf		TMR_H + 1
 
 		; add t_slot to countdown
 		movf		t_slot, W
-		addwf		TMR0, F
+		addwf		TMR_L, F
 		movf		t_slot + 1, W
 		btfsc		STATUS, C
 		incfsz		t_slot + 1, W
-		addwf		TMR1, F
+		addwf		TMR_H, F
 		movf		t_slot + 2, W
 		btfsc		STATUS, C
 		incfsz		t_slot + 2, W
-		addwf		TMR2, F
+		addwf		TMR_H + 1, F
 
 main_loop_calc
 		; adjust countdown to cause drop in current or next round
 		movf		t_round, W
-		subwf		TMR0, F
+		subwf		TMR_L, F
 		movf		t_round + 1, W
 		btfss		STATUS, C
 		incfsz		t_round + 1, W
-		subwf		TMR1, F
+		subwf		TMR_H, F
 		movf		t_round + 2, W
 		btfss		STATUS, C
 		incfsz		t_round + 2, W
-		subwf		TMR2, F
+		subwf		TMR_H + 1, F
 		btfsc		STATUS, C
 		goto		main_loop_calc
 
