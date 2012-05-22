@@ -1,6 +1,6 @@
 # hole-in-one
 
-The program calculates when a metal ball needs to be released by a magnet to drop through a hole in a spinning disk.
+The program uses a hall effect sensor to calculate when a metal ball needs to be released by a magnet to drop through a hole in a spinning disk.
 It was was written for a PIC16F84A with an external clock of 4MHz.
 
 ## Development Environment

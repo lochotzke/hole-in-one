@@ -1,10 +1,4 @@
 ; http://pic-projects.net/
-; TODO: Fehlerbetrachtung, statische Analyse (Zeitaufwand, Codezeilen, Speicherverbrauch, ...)
-; TODO: document calculations (round and countdown)
-; TODO: determine T_RELEASE through trial and error
-
-; picp -c /dev/ttyUSB0 16f84a -ef && picp -c /dev/ttyUSB0 16f84a -wp *.hex
-
 ; 2012 © André Lochotzke <andre.lochotzke@stud.fh-erfurt.de>
 
 		include		<p16f84a.inc>
@@ -12,10 +6,10 @@
 		; use decimal as the default radix
 		radix		dec
 
-		title		"hole-in-one, v0.3"
+		title		"hole-in-one, v1.0"
 
-		; external oscilator & watchdog timer off & power write on & code protection off
-		__config	_XT_OSC & _WDT_OFF & _PWRTE_ON & _CP_OFF
+		; external oscillator & watchdog timer off & power-up timer off & code protection off
+		__config	_XT_OSC & _WDT_OFF & _PWRTE_OFF & _CP_OFF
 
 #define		TRIGGER_PORT	PORTA
 #define		TRIGGER_PIN	1
@@ -24,11 +18,7 @@
 #define		MAGNET_PORT	PORTB
 #define		MAGNET_PIN	2
 
-;#define		T_COMPUTE	79
-#define		T_COMPUTE	0
-#define 	T_RELEASE	0
 #define		T_DROP		316121
-;#define		T_DROP		0
 #define		TMR_Z		0
 
 		udata
@@ -63,21 +53,18 @@ init
 		; use internal instruction cycle clock as source for TMR0
 		bcf		OPTION_REG, T0CS
 		; set TMR0 prescalar to 1:1
-		bcf		OPTION_REG, PS2
-		bcf		OPTION_REG, PS1
 		bcf		OPTION_REG, PS0
-		; set TRIGGER_PIN as input
-		bsf		TRISA, TRIGGER_PIN
-; FIXME: make nicer
-		movlw		H'00'
-		movwf		TRISB
+		bcf		OPTION_REG, PS1
+		bcf		OPTION_REG, PS2
+		; TRIGGER_PIN is already set as input (datasheet, p. 7)
+		; set PINs on PORTB as output (status leds and MAGNET_PIN)
+		clrf		TRISB
 		; set SENSOR_PIN as input
 		bsf		TRISB, SENSOR_PIN
 		bcf		STATUS, RP0
 		errorlevel	+302
-		; MAGNET_PIN is already set as output, but needs to be turned on
-		; set all to one
-		movlw		H'FF'
+		; turn off all leds and turn on magnet (all are low active)
+		movlw		h'ff'
 		movwf		PORTB
 		; ram needs to be cleared since it can contain garbage
 		clrf		FLAGS
@@ -94,61 +81,54 @@ init
 		goto		main
 
 main
-		; poll trigger push
-; DEBUG
+		; programm is initialized
 		bcf		PORTB, 1
 
+		; poll trigger push
 main_loop_trigger_start
 		btfsc		TRIGGER_PORT, TRIGGER_PIN
 		goto		main_loop_trigger_start
 main_loop_trigger_stop
-; DEBUG
-;		bsf		PORTB, 1
+
+		; trigger pushed
 		bcf		PORTB, 3
-		
+
 		; poll trigger release
 		btfss		TRIGGER_PORT, TRIGGER_PIN
 		goto		main_loop_trigger_stop
 
-; DEBUG
-;		bsf		PORTB, 3
+		; trigger released
 		bcf		PORTB, 4
 
 		; poll slot start
 main_loop_slot_start
-; TODO: maybe use btfsc
-		btfss		SENSOR_PORT, SENSOR_PIN		; 2µs (start slot)
+		btfss		SENSOR_PORT, SENSOR_PIN
 		goto		main_loop_slot_start
 
 		; count t_slot
-		; init TMR to account for delay
-		movlw		3				; 1µs
-		movwf		TMR0				; 1µs + 2µs (timer delay) (start counter)
+		clrf		TMR0
 		; enable TMR interrupt
-		bsf		INTCON, T0IE			; (1µs)
+		bsf		INTCON, T0IE
 
-; DEBUG
-;		bsf		PORTB, 4
+		; counter started
 		bcf		PORTB, 5
 
 		; poll slot end
 main_loop_slot_end
-; TODO: maybe use btfss
-		btfsc		SENSOR_PORT, SENSOR_PIN		; 2µs (end slot)
+		btfsc		SENSOR_PORT, SENSOR_PIN
 		goto		main_loop_slot_end
 
-; DEBUG
-;		bsf		PORTB, 5
+		; slot ended
 		bcf		PORTB, 6
 
 		; stop timer
 		; change TMR0 source to RA4 to stop counter
-		bsf		OPTION_REG, T0CS		; 1µs (end counter)
+		bsf		OPTION_REG, T0CS
 		; disable TMR interrupt
-		bcf		INTCON, T0IE			; 1µs (start COMPUTE)
+		bcf		INTCON, T0IE
 
 		; save TMR0:2 to t_slot
-		movf		TMR0, W				; 6µs
+		movf		TMR0, W
 		movwf		t_slot
 		movf		TMR1, W
 		movwf		t_slot + 1
@@ -157,19 +137,19 @@ main_loop_slot_end
 
 		; multiply TMR with 18 (TMR = (TMR * 2 * 2 * 2 + TMR) * 2)
 		; TMR *= 2
-		rlf		TMR0, F				; 3µs
+		rlf		TMR0, F
 		rlf		TMR1, F
 		rlf		TMR2, F
 		; TMR *= 2
-		rlf		TMR0, F				; 3µs
+		rlf		TMR0, F
 		rlf		TMR1, F
 		rlf		TMR2, F
 		; TMR *= 2
-		rlf		TMR0, F				; 3µs
+		rlf		TMR0, F
 		rlf		TMR1, F
 		rlf		TMR2, F
 		; TMR += t_slot
-		movf		t_slot, W			; 10µs
+		movf		t_slot, W
 		addwf		TMR0, F
 		movf		t_slot + 1, W
 		btfsc		STATUS, C
@@ -180,29 +160,28 @@ main_loop_slot_end
 		incfsz		t_slot + 2, W
 		addwf		TMR2, F
 		; TMR *= 2
-		rlf		TMR0, F				; 3µs
+		rlf		TMR0, F
 		rlf		TMR1, F
 		rlf		TMR2, F
 
 		; save TMR0:2 to t_round
-		movf		TMR0, W				; 6µs
+		movf		TMR0, W
 		movwf		t_round
 		movf		TMR1, W
 		movwf		t_round + 1
 		movf		TMR2, W
 		movwf		t_round + 2
 
-		; init countdown				; 6µs
-		movlw		(T_COMPUTE + T_RELEASE + T_DROP) >> 0 & H'ff'
+		; init countdown
+		movlw		T_DROP >> 0 & h'ff'
 		movwf		TMR0
-		movlw		(T_COMPUTE + T_RELEASE + T_DROP) >> 8 & H'ff'
+		movlw		T_DROP >> 8 & h'ff'
 		movwf		TMR1
-		movlw		(T_COMPUTE + T_RELEASE + T_DROP) >> 16 & H'ff'
+		movlw		T_DROP >> 16 & h'ff'
 		movwf		TMR2
 
-; TODO: another math fix?
 		; add t_slot to countdown
-		movf		t_slot, W			; 10µs
+		movf		t_slot, W
 		addwf		TMR0, F
 		movf		t_slot + 1, W
 		btfsc		STATUS, C
@@ -215,7 +194,7 @@ main_loop_slot_end
 
 main_loop_calc
 		; adjust countdown to cause drop in current or next round
-		movf		t_round, W			; min. 12µs max. 25µs
+		movf		t_round, W
 		subwf		TMR0, F
 		movf		t_round + 1, W
 		btfss		STATUS, C
@@ -225,19 +204,15 @@ main_loop_calc
 		btfss		STATUS, C
 		incfsz		t_round + 2, W
 		subwf		TMR2, F
-; TODO: maybe btfsc is the fix?
-; http://picprojects.org.uk/projects/pictips.htm
-; FIXME: too many rounds
 		btfsc		STATUS, C
 		goto		main_loop_calc
 
-; DEBUG
-;		bsf		PORTB, 6
+		; calculation is done
 		bcf		PORTB, 7
 
 		; start timer/countdown
 		; change TMR0 source back to internal cycle count
-		bcf		OPTION_REG, T0CS		; 1µs + 2µs (delay)
+		bcf		OPTION_REG, T0CS
 		; enable TMR interrupt
 		bsf		INTCON, T0IE
 
@@ -249,7 +224,8 @@ main_loop_countdown
 		; drop ball
 		bcf		MAGNET_PORT, MAGNET_PIN
 
-;		bsf		PORTB, 7
+		; ball was dropped
+		bsf		PORTB, 7
 
 		; halt
 		goto		$

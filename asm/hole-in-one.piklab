@@ -10,6 +10,9 @@
     <description/>
     <version>0.3</version>
     <output_type>executable</output_type>
+    <opened_files>
+      <item>main.asm</item>
+    </opened_files>
   </general>
   <editors/>
   <assembler>
