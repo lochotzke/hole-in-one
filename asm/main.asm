@@ -56,15 +56,20 @@ init
 		bcf		OPTION_REG, PS1
 		bcf		OPTION_REG, PS2
 		; TRIGGER_PIN is already set as input (datasheet, p. 7)
-		; set PINs on PORTB as output (status leds and MAGNET_PIN)
+		; set PINs on PORTB as output (status leds and MAGNET_PIN) and
+		; SENSOR_PIN as input
 		clrf		TRISB
-		; set SENSOR_PIN as input
 		bsf		TRISB, SENSOR_PIN
 		bcf		STATUS, RP0
 		errorlevel	+302
-		; turn off all leds and turn on magnet (all are low active)
-		movlw		b'11111110'
-		movwf		PORTB
+		; turn off all leds (low active) and turn on magnet
+		bsf		PORTB, 1
+		bsf		PORTB, 3
+		bsf		PORTB, 4
+		bsf		PORTB, 5
+		bsf		PORTB, 6
+		bsf		PORTB, 7
+		bsf		MAGNET_PORT, MAGNET_PIN
 		; ram needs to be cleared since it can contain garbage
 		clrf		FLAGS
 		clrf		TMR_H
@@ -80,7 +85,7 @@ init
 		goto		main
 
 main
-		; programm is initialized
+		; show that programm is initialized
 		bcf		PORTB, 1
 
 		; poll trigger push
@@ -89,14 +94,14 @@ main_loop_trigger_start
 		goto		main_loop_trigger_start
 main_loop_trigger_stop
 
-		; trigger pushed
+		; show that trigger is pushed
 		bcf		PORTB, 3
 
 		; poll trigger release
 		btfss		TRIGGER_PORT, TRIGGER_PIN
 		goto		main_loop_trigger_stop
 
-		; trigger released
+		; show that trigger is released
 		bcf		PORTB, 4
 
 		; poll slot start
@@ -104,12 +109,14 @@ main_loop_slot_start
 		btfss		SENSOR_PORT, SENSOR_PIN
 		goto		main_loop_slot_start
 
-		; count t_slot
+		; initialize and start timer/counter
 		clrf		TMR_L
+		clrf		TMR_H
+		clrf		TMR_H + 1
 		; enable TMR interrupt
 		bsf		INTCON, T0IE
 
-		; counter started
+		; show that timer/counter was started
 		bcf		PORTB, 5
 
 		; poll slot end
@@ -117,16 +124,15 @@ main_loop_slot_end
 		btfsc		SENSOR_PORT, SENSOR_PIN
 		goto		main_loop_slot_end
 
-		; slot ended
-		bcf		PORTB, 6
-
-		; stop timer
-		; change TMR0 source to RA4 to stop counter
+		; change TMR0 source to RA4 to stop timer/counter
 		bsf		OPTION_REG, T0CS
 		; disable TMR interrupt
 		bcf		INTCON, T0IE
 
-		; save TMR0:2 to t_slot
+		; show that counter was stopped
+		bcf		PORTB, 6
+
+		; save TMR0:2
 		movf		TMR_L, W
 		movwf		t_slot
 		movf		TMR_H, W
@@ -134,7 +140,7 @@ main_loop_slot_end
 		movf		TMR_H + 1, W
 		movwf		t_slot + 2
 
-		; multiply TMR with 18 (TMR = (TMR * 2 * 2 * 2 + TMR) * 2)
+		; multiply TMR with 18 to calculate round (TMR = (TMR * 2 * 2 * 2 + TMR) * 2)
 		; TMR *= 2
 		rlf		TMR_L, F
 		rlf		TMR_H, F
@@ -171,7 +177,7 @@ main_loop_slot_end
 		movf		TMR_H + 1, W
 		movwf		t_round + 2
 
-		; init countdown
+		; initialize countdown
 		movlw		T_DROP >> 0 & h'ff'
 		movwf		TMR_L
 		movlw		T_DROP >> 8 & h'ff'
@@ -192,7 +198,7 @@ main_loop_slot_end
 		addwf		TMR_H + 1, F
 
 main_loop_calc
-		; adjust countdown to cause drop in current or next round
+		; adjust countdown to cause drop as soon as possible
 		movf		t_round, W
 		subwf		TMR_L, F
 		movf		t_round + 1, W
@@ -206,16 +212,15 @@ main_loop_calc
 		btfsc		STATUS, C
 		goto		main_loop_calc
 
-		; calculation is done
-		bcf		PORTB, 7
-
-		; start timer/countdown
-		; change TMR0 source back to internal cycle count
+		; change TMR0 source back to internal cycle count to start timer/countdown
 		bcf		OPTION_REG, T0CS
 		; enable TMR interrupt
 		bsf		INTCON, T0IE
 
-		; wait for TMR0:2 to overflow
+		; show that calculation is done and countdown was started
+		bcf		PORTB, 7
+
+		; wait for TMR0:2 to overflow/countdown to be done
 main_loop_countdown
 		btfss		FLAGS, TMR_Z
 		goto		main_loop_countdown
@@ -223,7 +228,12 @@ main_loop_countdown
 		; drop ball
 		bcf		MAGNET_PORT, MAGNET_PIN
 
-		; ball was dropped
+		; show that ball was dropped and programm is done
+		bsf		PORTB, 1
+		bsf		PORTB, 3
+		bsf		PORTB, 4
+		bsf		PORTB, 5
+		bsf		PORTB, 6
 		bsf		PORTB, 7
 
 		; halt

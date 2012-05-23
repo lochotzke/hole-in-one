@@ -39,72 +39,101 @@ void main()
 	// SENSOR_PIN as input
 	TRISB = 0b00000001;
 
-	// turn off all leds and turn on magnet (all are low active)
-	PORTB = 0b11111110;
+	// turn off all leds (low active) and turn on magnet
+	RB1 = 1;
+	RB3 = 1;
+	RB4 = 1;
+	RB5 = 1;
+	RB6 = 1;
+	RB7 = 1;
+	MAGNET_PIN = 1;
 
 	// ram needs to be cleared since it can contain garbage
 	int t_slot = 0;
 	int t_round = 0;
 	int t_release = 0;
 
+	// enable interrupts
 	GIE = 1;
 
-	//Set Debug-LED
+	// show that programm is initialized
 	RB1 = 0;
 
-	//Wait for trigger button to be pushed
+	// poll trigger push
 	while (TRIGGER_PIN);
+
+	// show that trigger is pushed
 	RB3 = 0;
 
-	//Wait for trigger button to be released
+	// poll trigger release
 	while (!TRIGGER_PIN);
 
-	//Set Debug-LED
+	// show that trigger is released
 	RB4 = 0;
 
-	//Wait for Hall-Sensor and Calucalte Time
-	//Wait for First Sensor signal
+	// poll slot start
 	while (!SENSOR_PIN);
 
-	//Set Debug-LED
-	RB5 = 0;
-
-	//Start Timer
-	TMR0 = 0;
+	// initialize and start timer/counter
+	TMR_L = 0;
+	TMR_H = 0;
+	// enable TMR interrupt
 	T0IE = 1;
 
+	// show that timer/counter was started
+	RB5 = 0;
+
+	// poll slot end
 	while (SENSOR_PIN);
-	//Wait for Second Trigger signal
 
-	//Get Timer result
+	// change TMR0 source to RA4 to stop timer/counter
 	T0CS = 1;
+	// disable TMR interrupt
 	T0IE = 0;
-	t_slot = (TMR_H << 8) + TMR_L;
 
-	//Calculate perfect droptime in µs
-	t_round = t_slot * 18;
-	t_release = T_DROP + t_slot;
-
-	//Set Debug-LED
+	// show that counter was stopped
 	RB6 = 0;
 
+	// save timer/counter value
+	t_slot = (TMR_H << 8) + TMR_L;
+
+	// multiply t_slot with 18 to calculate t_round
+	t_round = t_slot * 18;
+
+	// calculate countdown
+	t_release = T_DROP + t_slot;
+
+	// adjust countdown to cause drop as soon as possible
 	while (t_release > 0) {
 		t_release -= t_round;
 	}
 
-	//Drop ball after droptime
+	// initialize timer
 	TMR_H = t_release >> 8;
-	TMR0 = t_release & 0xff;
+	TMR_L = t_release & 0xff;
+
+	// change TMR0 source back to internal cycle count to start timer/countdown
 	T0CS = 0;
+	// enable TMR interrupt
 	T0IE = 1;
 
-	while (!TMR_Z);
-
-	//Set Debug-LED
+	// show that calculation is done and countdown was started
 	RB7 = 0;
 
-	// Release ball
+	// wait for timer to overflow/countdown to be done
+	while (!TMR_Z);
+
+	// drop ball
 	MAGNET_PIN = 0;
 
+	// show that ball was dropped and programm is done
+	RB1 = 1;
+	RB3 = 1;
+	RB4 = 1;
+	RB5 = 1;
+	RB6 = 1;
+	RB7 = 1;
+
+	// halt
 	while (1);
 }
