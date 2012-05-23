@@ -1,4 +1,22 @@
-; 2012 © André Lochotzke <andre.lochotzke@stud.fh-erfurt.de>
+; Copyright © 2012 André Lochotzke <andre.lochotzke@stud.fh-erfurt.de>
+;
+; Permission is hereby granted, free of charge, to any person obtaining a copy
+; of this software and associated documentation files (the "Software"), to deal
+; in the Software without restriction, including without limitation the rights
+; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+; copies of the Software, and to permit persons to whom the Software is
+; furnished to do so, subject to the following conditions:
+;
+; The above copyright notice and this permission notice shall be included in all
+; copies or substantial portions of the Software.
+;
+; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+; SOFTWARE.
 
 		include		<p16f84a.inc>
 
@@ -7,7 +25,8 @@
 
 		title		"hole-in-one, v1.0"
 
-		; external oscillator & watchdog timer off & power-up timer off & code protection off
+		; external oscillator & watchdog timer off & power-up timer off
+		; & code protection off
 		__config	_XT_OSC & _WDT_OFF & _PWRTE_OFF & _CP_OFF
 
 #define		TRIGGER_PORT	PORTA
@@ -22,13 +41,15 @@
 #define		TMR_Z		0
 
 		udata
- 
-		errorlevel	-231	; "No memory has been reserved by this instruction."
+
+		; disable "No memory has been reserved by this instruction."
+		errorlevel	-231
 FLAGS		res		1
 TMR_H		res		2
 t_round		res		3
 t_slot		res		3
-		errorlevel	+231	; "No memory has been reserved by this instruction."
+		; enable "No memory has been reserved by this instruction."
+		errorlevel	+231
 
 start		code		0
 		goto		init
@@ -46,8 +67,9 @@ isr
 		bcf		INTCON, T0IF
 		retfie
 
-init
-		errorlevel	-302	; "Register in operand not in bank 0. Ensure bank bits are correct."
+init		; disable "Register in operand not in bank 0. Ensure bank bits
+		; are correct."
+		errorlevel	-302
 		bsf		STATUS, RP0
 		; use internal instruction cycle clock as source for TMR0
 		bcf		OPTION_REG, T0CS
@@ -61,6 +83,8 @@ init
 		clrf		TRISB
 		bsf		TRISB, SENSOR_PIN
 		bcf		STATUS, RP0
+		; enable "Register in operand not in bank 0. Ensure bank bits
+		; are correct."
 		errorlevel	+302
 		; turn off all leds (low active) and turn on magnet
 		bsf		PORTB, 1
@@ -140,7 +164,8 @@ main_loop_slot_end
 		movf		TMR_H + 1, W
 		movwf		t_slot + 2
 
-		; multiply TMR with 18 to calculate round (TMR = (TMR * 2 * 2 * 2 + TMR) * 2)
+		; multiply TMR with 18 to calculate round
+		; (TMR = (TMR * 2 * 2 * 2 + TMR) * 2)
 		; TMR *= 2
 		rlf		TMR_L, F
 		rlf		TMR_H, F
@@ -212,7 +237,8 @@ main_loop_calc
 		btfsc		STATUS, C
 		goto		main_loop_calc
 
-		; change TMR0 source back to internal cycle count to start timer/countdown
+		; change TMR0 source back to internal cycle count to start
+		; timer/countdown
 		bcf		OPTION_REG, T0CS
 		; enable TMR interrupt
 		bsf		INTCON, T0IE
