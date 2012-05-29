@@ -37,6 +37,7 @@
 #define		MAGNET_PIN	2
 
 #define		T_DROP		316121
+
 #define		TMR_L		TMR0
 #define		TMR_Z		0
 
@@ -80,13 +81,13 @@ init		; disable "Register in operand not in bank 0. Ensure bank bits
 		; TRIGGER_PIN is already set as input (datasheet, p. 7)
 		; set PINs on PORTB as output (status leds and MAGNET_PIN) and
 		; SENSOR_PIN as input
-		clrf		TRISB
-		bsf		TRISB, SENSOR_PIN
+		movlw		b'00000001'
+		movwf		TRISB
 		bcf		STATUS, RP0
 		; enable "Register in operand not in bank 0. Ensure bank bits
 		; are correct."
 		errorlevel	+302
-		; turn off all leds (low active) and turn on magnet
+		; turn off all leds ignoring sensor (low active) and turn on magnet
 		bsf		PORTB, 1
 		bsf		PORTB, 3
 		bsf		PORTB, 4
@@ -135,8 +136,6 @@ main_loop_slot_start
 
 		; initialize and start timer/counter
 		clrf		TMR_L
-		clrf		TMR_H
-		clrf		TMR_H + 1
 		; enable TMR interrupt
 		bsf		INTCON, T0IE
 
@@ -156,7 +155,7 @@ main_loop_slot_end
 		; show that counter was stopped
 		bcf		PORTB, 6
 
-		; save TMR0:2
+		; save timer/counter value
 		movf		TMR_L, W
 		movwf		t_slot
 		movf		TMR_H, W
@@ -194,7 +193,7 @@ main_loop_slot_end
 		rlf		TMR_H, F
 		rlf		TMR_H + 1, F
 
-		; save TMR0:2 to t_round
+		; save result to t_round
 		movf		TMR_L, W
 		movwf		t_round
 		movf		TMR_H, W
@@ -210,7 +209,7 @@ main_loop_slot_end
 		movlw		T_DROP >> 16 & h'ff'
 		movwf		TMR_H + 1
 
-		; add t_slot to countdown
+		; add one slot to countdown
 		movf		t_slot, W
 		addwf		TMR_L, F
 		movf		t_slot + 1, W
@@ -222,8 +221,8 @@ main_loop_slot_end
 		incfsz		t_slot + 2, W
 		addwf		TMR_H + 1, F
 
-main_loop_calc
 		; adjust countdown to cause drop as soon as possible
+main_loop_calc
 		movf		t_round, W
 		subwf		TMR_L, F
 		movf		t_round + 1, W
@@ -246,21 +245,13 @@ main_loop_calc
 		; show that calculation is done and countdown was started
 		bcf		PORTB, 7
 
-		; wait for TMR0:2 to overflow/countdown to be done
+		; wait for timer to overflow/countdown to be done
 main_loop_countdown
 		btfss		FLAGS, TMR_Z
 		goto		main_loop_countdown
 
 		; drop ball
 		bcf		MAGNET_PORT, MAGNET_PIN
-
-		; show that ball was dropped and programm is done
-		bsf		PORTB, 1
-		bsf		PORTB, 3
-		bsf		PORTB, 4
-		bsf		PORTB, 5
-		bsf		PORTB, 6
-		bsf		PORTB, 7
 
 		; halt
 		goto		$

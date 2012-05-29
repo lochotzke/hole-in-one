@@ -7,6 +7,9 @@
     <files>
       <item>main.asm</item>
     </files>
+    <opened_files>
+      <item>main.asm</item>
+    </opened_files>
   </general>
   <editors/>
 </piklab>

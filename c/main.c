@@ -16,7 +16,7 @@
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE O8R OTHER DEALINGS IN THE
  * SOFTWARE.
  */
 
@@ -24,7 +24,7 @@
 
 // external oscillator & watchdog timer off & power-up timer off & code
 // protection off
-__CONFIG(FOSC_XT & WDTE_OFF & PWRTE_ON & CP_OFF);
+__CONFIG(FOSC_XT & WDTE_OFF & PWRTE_OFF & CP_OFF);
 
 #define TRIGGER_PIN	RA1
 #define SENSOR_PIN	RB0
@@ -34,7 +34,8 @@ __CONFIG(FOSC_XT & WDTE_OFF & PWRTE_ON & CP_OFF);
 
 #define TMR_L		TMR0
 
-static int TMR_H = 0;
+// data types are small when using picc, see README.md
+volatile unsigned int TMR_H = 0;
 volatile bit TMR_Z = 0;
 
 static void interrupt isr()
@@ -60,7 +61,7 @@ void main()
 	// SENSOR_PIN as input
 	TRISB = 0b00000001;
 
-	// turn off all leds (low active) and turn on magnet
+	// turn off all leds ignoring sensor (low active) and turn on magnet
 	RB1 = 1;
 	RB3 = 1;
 	RB4 = 1;
@@ -70,9 +71,9 @@ void main()
 	MAGNET_PIN = 1;
 
 	// ram needs to be cleared since it can contain garbage
-	int t_slot = 0;
-	int t_round = 0;
-	int t_release = 0;
+	unsigned short long t_slot = 0;
+	unsigned short long t_round = 0;
+	signed short long t_release = 0;
 
 	// enable interrupts
 	GIE = 1;
@@ -97,7 +98,6 @@ void main()
 
 	// initialize and start timer/counter
 	TMR_L = 0;
-	TMR_H = 0;
 	// enable TMR interrupt
 	T0IE = 1;
 
@@ -116,12 +116,12 @@ void main()
 	RB6 = 0;
 
 	// save timer/counter value
-	t_slot = (TMR_H << 8) + TMR_L;
+	t_slot = TMR_H * 256 + TMR_L;
 
-	// multiply t_slot with 18 to calculate t_round
+	// multiply t_slot with 18 to calculate round
 	t_round = t_slot * 18;
 
-	// calculate countdown
+	// add one slot to countdown
 	t_release = T_DROP + t_slot;
 
 	// adjust countdown to cause drop as soon as possible
@@ -129,8 +129,8 @@ void main()
 		t_release -= t_round;
 	}
 
-	// initialize timer
-	TMR_H = t_release >> 8;
+	// initialize countdown
+	TMR_H = t_release / 256;
 	TMR_L = t_release & 0xff;
 
 	// change TMR0 source back to internal cycle count to start timer/countdown
@@ -146,14 +146,6 @@ void main()
 
 	// drop ball
 	MAGNET_PIN = 0;
-
-	// show that ball was dropped and programm is done
-	RB1 = 1;
-	RB3 = 1;
-	RB4 = 1;
-	RB5 = 1;
-	RB6 = 1;
-	RB7 = 1;
 
 	// halt
 	while (1);
