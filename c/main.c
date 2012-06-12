@@ -93,6 +93,8 @@ void main()
 	// show that trigger is released
 	RB4 = 0;
 
+	// don't start in slot
+	while (SENSOR_PIN);
 	// poll slot start
 	while (!SENSOR_PIN);
 

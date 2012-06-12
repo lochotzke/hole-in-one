@@ -129,6 +129,10 @@ main_loop_trigger_stop
 		; show that trigger is released
 		bcf		PORTB, 4
 
+		; don't start in slot
+main_loop_slot_pre_start
+		btfsc		SENSOR_PORT, SENSOR_PIN
+		goto		main_loop_slot_pre_start
 		; poll slot start
 main_loop_slot_start
 		btfss		SENSOR_PORT, SENSOR_PIN
