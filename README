@@ -7,19 +7,21 @@ It was was written for a PIC16F84A with an external clock of 4MHz.
 C Data Types
 ------------
 
+Some data types are of course smaller than what you expect. The following table is just for reference to not forget about it.
+
 Type                | Size (bits) | Arithmetic Type
---------------------|:-----------:|-----------------
-bit                 | 1           | Unsigned integer
-signed char         | 8           | Signed integer
-unsigned char       | 8           | Unsigned integer
-signed short        | 16          | Signed integer
-unsigned short      | 16          | Unsigned integer
-signed int          | 16          | Signed integer
-unsigned int        | 16          | Unsigned integer
-signed short long   | 24          | Signed integer
-unsigned short long | 24          | Unsigned integer
-signed long         | 32          | Signed integer
-unsigned long       | 32          | Unsigned integer
+--------------------|-------------|-----------------
+bit                 |      1      | Unsigned integer
+signed char         |      8      | Signed integer
+unsigned char       |      8      | Unsigned integer
+signed short        |     16      | Signed integer
+unsigned short      |     16      | Unsigned integer
+signed int          |     16      | Signed integer
+unsigned int        |     16      | Unsigned integer
+signed short long   |     24      | Signed integer
+unsigned short long |     24      | Unsigned integer
+signed long         |     32      | Signed integer
+unsigned long       |     32      | Unsigned integer
 
 Information taken from "HI-TECH C® for PIC10/12/16 User's Guide" page 54.
 
@@ -30,7 +32,7 @@ PikLab
 http://piklab.sourceforge.net/
 https://launchpad.net/~michael-gruz/+archive/elektronik
 sudo add-apt-repository ppa:michael-gruz/elektronik
-sudo apt-get update &&  sudo apt-get install piklab
+sudo apt-get update && sudo apt-get install piklab
 
 GPUtils
 http://gputils.sourceforge.net/
