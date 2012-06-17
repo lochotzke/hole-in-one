@@ -23,32 +23,32 @@ Information taken from "HI-TECH C® for PIC10/12/16 User's Guide" page 54.
 
 ## Development Environment
 
-PikLab
+### PikLab
 http://piklab.sourceforge.net/
 https://launchpad.net/~michael-gruz/+archive/elektronik
 sudo add-apt-repository ppa:michael-gruz/elektronik
 sudo apt-get update &&  sudo apt-get install piklab
 
-GPUtils
+### GPUtils
 http://gputils.sourceforge.net/
 sudo apt-get install gputils
 
-HI-TECH C® Compiler for PIC10/12/16 MCUs (PICC Compiler)
+### HI-TECH C® Compiler for PIC10/12/16 MCUs (PICC Compiler)
 http://www.htsoft.com/
 
-GPSim
+### GPSim
 http://gpsim.sourceforge.net/
 sudo apt-get install gpsim
 
-picp (only necessary for PICSTART Plus rev. 0)
-http://home.pacbell.net/theposts/picmicro/ (down)
+### picp (only necessary for PICSTART Plus rev. 0)
+<s>http://home.pacbell.net/theposts/picmicro/</s>
 sudo apt-get install picp
 Erase: picp -c /dev/ttyUSB0 16f84a -ef
 Write: picp -c /dev/ttyUSB0 16f84a -wp *.hex
 
 ## Links
 * [Using PicStart Plus under Linux](http://www.warpedlogic.co.uk/node/9/)
-* [PICP](http://home.pacbell.net/theposts/picmicro/PICPmanual.html) (down)
+* <s>[PICP](http://home.pacbell.net/theposts/picmicro/PICPmanual.html)</s>
 ### Tutorials
 * http://www.amqrp.org/elmer160/lessons/index.html
 * http://www.winpicprog.co.uk/pic_tutorial.htm
