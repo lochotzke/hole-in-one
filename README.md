@@ -23,29 +23,34 @@ unsigned short long |     24      | Unsigned integer
 signed long         |     32      | Signed integer
 unsigned long       |     32      | Unsigned integer
 
-Information taken from "HI-TECH C® for PIC10/12/16 User's Guide" page 54.
+Information taken from [HI-TECH C® for PIC10/12/16 User's Guide](/doc/HI-TECH C for PIC101216 User's Guide [2010].pdf) page 54.
 
 Development Environment
 -----------------------
 
 **PikLab**
+
 	http://piklab.sourceforge.net/
 	https://launchpad.net/~michael-gruz/+archive/elektronik
 	sudo add-apt-repository ppa:michael-gruz/elektronik
 	sudo apt-get update && sudo apt-get install piklab
 
 **GPUtils**
+
 	http://gputils.sourceforge.net/
 	sudo apt-get install gputils
 
 **HI-TECH C® Compiler for PIC10/12/16 MCUs (PICC Compiler)**
+
 	http://www.htsoft.com/
 
 **GPSim**
+
 	http://gpsim.sourceforge.net/
 	sudo apt-get install gpsim
 
 **picp (only necessary for PICSTART Plus rev. 0)**
+
 	http://home.pacbell.net/theposts/picmicro/ (down)
 	sudo apt-get install picp
 	Erase: picp -c /dev/ttyUSB0 16f84a -ef
@@ -78,6 +83,7 @@ Misc
 ----
 
 DE2 Cyclone II EP2C35F672C6
+
 DE2-70 Cyclone II EP2C70F896C6
 
 License
