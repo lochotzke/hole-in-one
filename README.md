@@ -23,7 +23,7 @@ unsigned short long |     24      | Unsigned integer
 signed long         |     32      | Signed integer
 unsigned long       |     32      | Unsigned integer
 
-Information taken from [HI-TECH C® for PIC10/12/16 User's Guide](/doc/HI-TECH C for PIC101216 User's Guide [2010].pdf) page 54.
+Information taken from [HI-TECH C® for PIC10/12/16 User's Guide](/kugeleck/hole-in-one/doc/HI-TECH C for PIC101216 User's Guide [2010].pdf) page 54.
 
 Development Environment
 -----------------------
